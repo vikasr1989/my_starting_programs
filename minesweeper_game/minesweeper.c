@@ -11,7 +11,7 @@
 
 void usage(char *progname)
 {
-	LOGE("Usage is %s <no_of_rows or columns> <no_of_mines>",progname);
+	LOGE("Usage is %s <no_of_rows or columns> <no_of_mines>\n",progname);
 }
 
 void open_surrounding_pixels(char *out,char *game,int row_num,int col_num,int rows, int columns)
@@ -122,33 +122,42 @@ void open_surrounding_pixels(char *out,char *game,int row_num,int col_num,int ro
 }
 void print_data(char *out,int rows, int columns)
 {
-	int i,j;
-	for(i=0;i<rows;i++)
-	{
-		for(j=0;j<columns;j++)
-		{
-			if(out[i*columns + j] == 'X')
-			printf("X\t",out[i*columns + j]);
-			else if(out[i*columns + j] < 10)
-			printf("%d\t",out[i*columns + j]);
-			else if(out[i*columns + j] == 'M')
-			printf("M\t",out[i*columns + j]);
-			else if(out[i*columns + j] == 'F')
-			printf("F\t",out[i*columns + j]);
-			else
-			printf("\t",out[i*columns + j]);
-		}
-		printf("\n");
-		printf("\n");
-	}
+    int i,j;
+    printf("\t");
+    for(j=0;j<columns;j++)
+    {
+        printf("%d\t",j);
+    }
+    printf("\n");
+    printf("\n");
+    
+
+    for(i=0;i<rows;i++)
+    {
+        printf("%d | \t",i);
+        for(j=0;j<columns;j++)
+        {
+            if(out[i*columns + j] == 'X')
+                printf("X\t",out[i*columns + j]);
+            else if(out[i*columns + j] < 10)
+                printf("%d\t",out[i*columns + j]);
+            else if(out[i*columns + j] == 'M')
+                printf("M\t",out[i*columns + j]);
+            else if(out[i*columns + j] == 'F')
+                printf("F\t",out[i*columns + j]);
+            else
+                printf("\t",out[i*columns + j]);
+        }
+        printf("\n");
+        printf("\n");
+    }
 
 }
 int play_game(char *out ,char *game,int rows, int columns)
 {
-	int i=0;
+	int i;
 	int click=-1,row_num=0,col_num=0;
-	int ii,j,temp_mine_count;
-	int mine_index;
+    char c;
 #if 0
 	/* Following code added to ensure that first one is not a mine */
 	while(i<=0)
@@ -249,7 +258,8 @@ int play_game(char *out ,char *game,int rows, int columns)
 		i++;	
 	}
 #endif
-	for(;i<(rows*columns);i++)
+
+	for(i=0;i<(rows*columns);i++)
 	{
 		print_data(game,rows,columns);
 		printf("Enter the next move\n");
@@ -257,6 +267,11 @@ int play_game(char *out ,char *game,int rows, int columns)
 		scanf("%d",&click);
 		scanf("%d",&row_num);
 		scanf("%d",&col_num);
+        /* This is to ensure no extra arguments are read */
+        while((c = getchar()) != '\n' && c != EOF)
+        {
+        }
+        
 		printf("Click %d\t row_num %d\t col_num %d\n",click,row_num,col_num);
 		if(row_num >= rows || row_num < 0)
 		{
@@ -282,7 +297,6 @@ int play_game(char *out ,char *game,int rows, int columns)
 				}
 				if(game[row_num*columns + col_num] == 'F')
 				{
-					printf("Flagged before now opening\n");
 					i--;
 				}
 			}
@@ -335,7 +349,19 @@ int main(int argc, char *argv[])
 	}
 	columns = rows = atoi(argv[1]);
 	mines = atoi(argv[2]);
-	LOGD("Number of rows %d\nNumber of columns %d\nNumber of mines %d\n",columns,rows,mines);
+	printf("Number of rows %d\nNumber of columns %d\nNumber of mines %d\n",columns,rows,mines);
+    if(columns > 20)
+    {
+		LOGE("Too many columns and rows (greater than 20) \n");
+		return FAIL;
+	}
+        
+	if(mines == 0)
+	{
+		LOGE("Zero mines present \n");
+		return FAIL;
+	}
+    
 	if(mines >= 60*rows*columns/100)
 	{
 		LOGE("Too many mines requested (More than 60 percent ) \n");
