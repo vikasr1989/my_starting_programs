@@ -28,9 +28,10 @@ typedef struct
 	int num_imp_col;
 	char *raw_image;
 }bmp_header;
+
 void usage(char *progname)
 {
-	LOGE("Usage is %s <in_file_name1> <out_file_name> <resized_width> <resized_height>",progname);
+	LOGE("Usage is %s <in_file_name> <out_file_name> <resized_width> <resized_height>",progname);
 }
 
 int convert_bmp_image_to_rgb(char *img,bmp_header *hdr)
@@ -154,6 +155,81 @@ int convert_bmp_image_to_rgb(char *img,bmp_header *hdr)
 	return SUCCESS;
 }
 
+void downsample_image(char *in_img,char *out,int in_width,int in_height,int out_width,int out_height,int num_components)
+{
+    LOGD("downsampling\n");
+    int i,j,k=0;
+    int hsr=0,vsr=0;
+    hsr = in_width/out_width;
+    vsr = in_height/out_height;
+    char *inptr = in_img;
+    char *out_img = out;
+    for(i=0,k=0;i<out_height;i++,k+=vsr)
+    {
+        in_img = inptr + k*in_width*num_components;
+        for(j=0;j<out_width;j++)
+        {
+            *out_img++ = *in_img++;
+            *out_img++ = *in_img++;
+            *out_img++ = *in_img++;
+            in_img += (hsr-1)*num_components;
+        }
+    }
+}
+
+void apply_low_pass_filter_bmp_image(char *in_img,char *temp,int in_width,int in_height,int num_components,int filter_size)
+{
+    LOGD("apply_low_pass_filter_bmp_image\n");
+    int i,j,k=0;
+    float *lp_filter;
+    float fl_temp=0.0;
+    if(filter_size == 5)
+    {
+        lp_filter = calloc(filter_size * sizeof(float),1);
+        lp_filter[0] = 1.0;
+        lp_filter[1] = 0.6;
+        lp_filter[2] = 0.4;
+        lp_filter[3] = 0.2;
+        lp_filter[4] = 0.1;
+    }
+    else
+    {
+        return;
+    }
+    if(num_components != 3)
+    {
+        return;
+    }
+    for(i=0;i<in_height;i++)
+    {
+        for(j=0;j<in_width;j++)
+        {
+            for(k=0;k<filter_size;k++)
+            {
+                fl_temp = *in_img++ * lp_filter[k];
+                *temp = (((unsigned int)(*temp) + (int)fl_temp));
+                temp++;
+                fl_temp = *in_img++ * lp_filter[k];
+                *temp = (((unsigned int)(*temp) + (int)fl_temp));
+                temp++;
+                fl_temp = *in_img++ * lp_filter[k];
+                *temp = (((unsigned int)(*temp) + (int)fl_temp));
+                temp++;
+                temp -= num_components;
+            }
+            *temp = *temp / filter_size;
+            temp++;
+            *temp = *temp / filter_size;
+            temp++;
+            *temp = *temp / filter_size;
+            temp++;
+            in_img -= num_components*(filter_size-1);
+        }
+    }
+
+}
+
+
 int resize(char *in_img,char *out_img,int in_width, int in_height,int out_width,int out_height,int num_components)
 {
 	int i,j;
@@ -178,27 +254,16 @@ int resize(char *in_img,char *out_img,int in_width, int in_height,int out_width,
 	vsr_f = (float)in_height/out_height;
 	LOGD("in_height %d in_width %d\n",in_height,in_width);
 	LOGD("hsr %d vsr %d\n",hsr,vsr);
-	if(hsr == (int)hsr_f && vsr ==(float)vsr_f)
-	{
-		LOGD("Integer downsampling\n");
-	for(i=0;i<in_height;i+=vsr)
-	{
-		for(j=0;j<in_width;j+=hsr)
-		{
-			*out_img++ = *in_img++;
-			*out_img++ = *in_img++;
-			*out_img++ = *in_img++;
-			in_img += (hsr-1)*num_components;
-		}
-		in_img += (vsr-1)*in_width*num_components;
-	}
-	}
+	LOGD("hsr_f %f vsr_f %f\n",hsr_f,vsr_f);
+	if((float)hsr == hsr_f && (float)vsr ==vsr_f)
+    {
+        LOGD("Integer downsampling\n");
+    }
 	else
-	{
-		LOGE("Non-integer downsampling not supported\n");
-		return FAIL;
-	}
-	//memcpy(out_img,in_img,out_width*out_height*num_components);
+    {
+        LOGD("Non-integer downsampling No filtering done\n");
+    }
+    downsample_image(in_img,out_img,in_width,in_height,out_width,out_height,num_components);
 	LOGD("Returning from resize function\n");
 	return SUCCESS;
 }
