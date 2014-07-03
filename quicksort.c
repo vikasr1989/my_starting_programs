@@ -13,6 +13,7 @@
 #define LOGD //printf
 #define LEFT 0
 #define RIGHT ((sizeof(a)/(sizeof(int)))-1)
+#define RIGHT_FL ((sizeof(b)/(sizeof(float)))-1)
 
 #define PRINT_ELEMENTS(a,size) \
 {                              \
@@ -23,10 +24,21 @@
     }                          \
     printf("\n");              \
 }                              \
+
+#define PRINT_ELEMENTS_FL(a,size) \
+{                              \
+    int i;                     \
+    for(i=0;i<((size));i++)    \
+    {                          \
+        printf("%f ",a[i]);  \
+    }                          \
+    printf("\n");              \
+}                              \
     
 void my_swap(void *v[],int i, int j);
 void my_qsort(void *v[],int left,int right, int (*comp)(void*,void*));
 int  my_int_compare_function(int *a,int *b);
+int  my_float_compare_function(float *a,float *b);
 
 /******************************************************************************
  * FUNCTION NAME - main
@@ -36,22 +48,42 @@ int  my_int_compare_function(int *a,int *b);
  * ***************************************************************************/
 int main()
 {
-    int i;
-    int a[] = {98,76,1,43,21};
-    int (*comp)(void*,void*);
-    int *p[RIGHT+1];
-    printf("before sorting\n");
-    PRINT_ELEMENTS(a,RIGHT+1);
-    
-    comp = (int (*)(void *,void *))my_int_compare_function;
-
-    for(i=0;i<=RIGHT;i++)
     {
-        p[i] = &a[i];
+        int i;
+        int a[] = {98,76,1,43,21};
+        int (*comp)(void*,void*);
+        int *p[RIGHT+1];
+        printf("before sorting\n");
+        PRINT_ELEMENTS(a,RIGHT+1);
+
+        comp = (int (*)(void *,void *))my_int_compare_function;
+
+        for(i=0;i<=RIGHT;i++)
+        {
+            p[i] = &a[i];
+        }
+        my_qsort((void **)&p,LEFT,RIGHT,comp);
+        printf("after sorting\n");
+        PRINT_ELEMENTS(*p,RIGHT+1);
     }
-    my_qsort((void **)&p,LEFT,RIGHT,comp);
-    printf("after sorting\n");
-    PRINT_ELEMENTS(*p,RIGHT+1);
+    {
+        int i;
+        float b[] = {1.5,5.3,2.4};
+        float *pfl[RIGHT_FL+1];
+        int (*comp)(void*,void*);
+        printf("before sorting\n");
+        PRINT_ELEMENTS_FL(b,RIGHT_FL+1);
+
+        comp = (int (*)(void *,void *))my_float_compare_function;
+
+        for(i=0;i<=RIGHT_FL;i++)
+        {
+            pfl[i] = &b[i];
+        }
+        my_qsort((void **)&pfl,LEFT,RIGHT_FL,comp);
+        printf("after sorting\n");
+        PRINT_ELEMENTS_FL(*pfl,RIGHT_FL+1);
+    }
     return 0;
 }
 
@@ -125,5 +157,26 @@ int my_int_compare_function(int *a,int *b)
         iRet = 0;
 
     LOGD("\ra = %d b = %d ret = %d\n",*a,*b,iRet);
+    return iRet;
+}
+/******************************************************************************
+ * FUNCTION NAME - my_float_compare_function
+ * DESCRIPTION   - Compares 2 floats
+ * ARGUMENTS     - int *a   - Address of first float to be compared
+ *                 int *b   - Address of second float to be compared
+ * RETURN        - -1 if *a < *b
+ *                 1  if *a > *b
+ *                 0  if *a = *b
+ * ***************************************************************************/
+int my_float_compare_function(float *a,float *b)
+{
+    int iRet = 0;
+    if(*a < *b)
+        iRet = -1;
+    if(*a > *b)
+        iRet = 1;
+    if(*a == *b)
+        iRet = 0;
+
     return iRet;
 }
