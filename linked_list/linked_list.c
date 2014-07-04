@@ -4,20 +4,12 @@
 
 #define LOGD //printf
 
-typedef struct node
-{
-    int data;
-    struct node *next;
-}my_node;
+#include "linked_list_interface.h"
 
-void my_insert(int data);
-void my_delete(int data);
-void my_print(void);
-int my_count(void);
-void my_cleanup(void);
 my_node *head = NULL;
 void *handle = NULL;
 
+#if 0
 int main()
 {
     head = NULL;
@@ -37,6 +29,17 @@ int main()
     my_print();
     my_cleanup();
     return 0;
+}
+#endif
+my_node *my_create_linked_list(int NumberOfElements)
+{
+    head = NULL;
+    int i = 0;
+    for(i = 0;i<NumberOfElements;i++)
+    {
+        my_insert(i);
+    }
+    return head;
 }
 
 my_node *my_add_node_function(void *handle);
@@ -178,6 +181,20 @@ void my_print_linked_list(my_node *head)
         printf("%d\n",next->data);
     }
     return;
+}
+
+int my_count_linked_list(my_node *head)
+{
+    LOGD("%s\n",__func__);
+    my_node *next = NULL;
+    int count = 0;
+    LOGD("ptr = %p\n",head);
+    for(next = head;next != NULL;next = next->next)
+    {
+        LOGD("ptr = %p\n",next);
+        count++;
+    }
+    return count;
 }
 
 void my_delete_linked_list(my_node *head,void *handle)
