@@ -5,6 +5,7 @@
 #define LOGD //printf
 #define LOGE printf
 #define LOGC
+#define LOGI printf
 
 #define FOURCC(a,b,c,d) a | (b<<8) | (c<<16) | (d<<24)
 
@@ -26,26 +27,42 @@ enum
 }FourccCodes;
 int main(int argc, char* argv[])
 {
-    char cInFileName[100];
+    char *cInFileName;
+    char *cOutFileName;
     char *cInputBuffer;
     int iOffset = 0;
     int iNumBytes = 0;
     int fourcc = 0;
-    if(argc != 2)
+    if(argc != 3)
     {
         LOGE("Filename not specified\n");
-        printf("Usage %s <in_file_name \n",argv[0]);
+        printf("Usage %s <in_file_name> <out_file_name> \n",argv[0]);
         exit(1);
     }
     else
     {
+        cInFileName = malloc(strlen(argv[1])+5);
         strcpy(cInFileName,argv[1]);
+        cOutFileName = malloc(strlen(argv[2])+5);
+        strcpy(cOutFileName,argv[2]);
     }
-    FILE *InFIle;
-    InFIle = fopen(cInFileName,"rb");
+    FILE *InFile;
+    InFile = fopen(cInFileName,"rb");
+    if(!InFile)
+    {
+        LOGE("Cannot open input file %s\n",cInFileName);
+        exit(1);
+    }
+    FILE *OutFile;
+    OutFile = fopen(cOutFileName,"wb");
+    if(!OutFile)
+    {
+        LOGE("Cannot open output file %s\n",cOutFileName);
+        exit(1);
+    }
     {
         int iChunkId;
-        fread(&iChunkId,4,1,InFIle);
+        fread(&iChunkId,4,1,InFile);
         LOGD("iChunkId %x\n",iChunkId);
         if(iChunkId != FOURCC_RIFF)
         {
@@ -53,16 +70,16 @@ int main(int argc, char* argv[])
             goto error;
         }
         int iFileSize;
-        fread(&iFileSize,4,1,InFIle);
+        fread(&iFileSize,4,1,InFile);
         LOGD("FileSize %d\n",iFileSize);
 
         cInputBuffer = malloc(iFileSize);
-        fread(cInputBuffer,iFileSize,1,InFIle);
+        fread(cInputBuffer,iFileSize,1,InFile);
         /* iRiffType */
         LOGD("iRiffType %x\n",fourcc);
         //while(iOffset == iFileSize)
         int count =0;
-        while(count!=5)
+        while(iOffset < iFileSize)
         {
             int iDataSize = 0;
             char tmp;
@@ -104,6 +121,7 @@ int main(int argc, char* argv[])
                     LOGD("DATA chunk found\n");
                     LOGD("count %d\n",count);
                     GET_BYTES(4,&iDataSize);
+                    fwrite(cInputBuffer,iDataSize,1,OutFile);
                     if(iDataSize % 2 != 0)
                     {
                         iDataSize++;
@@ -118,6 +136,10 @@ int main(int argc, char* argv[])
                     LOGD("FACT chunk found\n");
                     LOGD("count %d\n",count);
                     GET_BYTES(4,&iDataSize);
+                    if(iDataSize % 2 != 0)
+                    {
+                        iDataSize++;
+                    }
                     while(iDataSize--)
                     {
                         GET_BYTES(1,&tmp);
@@ -127,15 +149,23 @@ int main(int argc, char* argv[])
                     LOGD("LIST chunk found\n");
                     LOGD("count %d\n",count);
                     GET_BYTES(4,&iDataSize);
+                    if(iDataSize % 2 != 0)
+                    {
+                        iDataSize++;
+                    }
                     while(iDataSize--)
                     {
                         GET_BYTES(1,&tmp);
                     }
                     break;                    
                 default:
-                    LOGD("chunk found with fourcc %x\n",fourcc);
+                    LOGI("chunk found with fourcc %x\n",fourcc);
                     LOGD("count %d\n",count);
                     GET_BYTES(4,&iDataSize);
+                    if(iDataSize % 2 != 0)
+                    {
+                        iDataSize++;
+                    }
                     while(iDataSize--)
                     {
                         GET_BYTES(1,&tmp);
@@ -148,7 +178,8 @@ int main(int argc, char* argv[])
     }
 
 error:
-    fclose(InFIle);
+    fclose(InFile);
+    fclose(OutFile);
     return 0;
 }
 
