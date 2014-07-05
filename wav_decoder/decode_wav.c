@@ -3,8 +3,8 @@
 #include <string.h>
 
 #define LOGD //printf
-#define LOGE printf
 #define LOGC
+#define LOGE printf
 #define LOGI printf
 
 #define FOURCC(a,b,c,d) a | (b<<8) | (c<<16) | (d<<24)
@@ -25,6 +25,7 @@ enum
     FOURCC_FACT = FOURCC('f','a','c','t'),
     FOURCC_LIST = FOURCC('L','I','S','T'),
 }FourccCodes;
+
 int main(int argc, char* argv[])
 {
     char *cInFileName;
@@ -121,14 +122,15 @@ int main(int argc, char* argv[])
                     LOGD("DATA chunk found\n");
                     LOGD("count %d\n",count);
                     GET_BYTES(4,&iDataSize);
-                    fwrite(cInputBuffer,iDataSize,1,OutFile);
                     if(iDataSize % 2 != 0)
                     {
                         iDataSize++;
                     }
                     
                     /* Have to process data here */
+                    fwrite(cInputBuffer+iOffset,iDataSize,1,OutFile);
                     iOffset += iDataSize;
+                    LOGD("iDataSize %d\n",iDataSize);
                     LOGD("iFileSize %d\n",iFileSize);
                     LOGD("iOffset %d\n",iOffset);
                     break;
